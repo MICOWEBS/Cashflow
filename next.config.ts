@@ -1,4 +1,4 @@
-import { NextConfig } from "next";
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   eslint: {
@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
   },
   output: 'standalone',
   images: {
-    domains: ['localhost'],
+    domains: ['images.unsplash.com'],
   },
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
