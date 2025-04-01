@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { DataTable } from "@/components/ui/DataTable";
 import { FormModal } from "@/components/ui/FormModal";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import api from "@/lib/api";
+import { ApiError } from "@/types/api";
 
 const columns = [
   { key: "name", label: "Name" },
@@ -52,7 +53,11 @@ const formFields = [
   },
 ];
 
-interface Vendor {
+interface FormData {
+  [key: string]: string | number | boolean | null;
+}
+
+interface Vendor extends Record<string, unknown> {
   id: string;
   name: string;
   companyName: string;
@@ -74,23 +79,24 @@ export default function Vendors() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
 
-  const fetchVendors = async () => {
+  const fetchVendors = useCallback(async () => {
     try {
       setLoading(true);
       const response = await api.get("/api/vendors");
       setVendors(response.data);
-    } catch (err: any) {
-      setError(err.response?.data?.error || "Failed to fetch vendors");
+    } catch (err) {
+      const apiError = err as ApiError;
+      setError(apiError.error || "Failed to fetch vendors");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchVendors();
-  }, []);
+  }, [fetchVendors]);
 
-  const handleSubmit = async (data: any) => {
+  const handleSubmit = async (data: FormData) => {
     try {
       setIsSubmitting(true);
       setError("");
@@ -110,18 +116,18 @@ export default function Vendors() {
 
       // Validate email format
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(data.email)) {
+      if (!emailRegex.test(String(data.email))) {
         setError("Please enter a valid email address");
         return;
       }
 
       // Format the data before sending
       const formattedData = {
-        name: data.name.trim(),
-        companyName: data.companyName.trim(),
-        email: data.email.trim().toLowerCase(),
-        phone: data.phone.trim(),
-        address: data.address.trim()
+        name: String(data.name || "").trim(),
+        companyName: String(data.companyName || "").trim(),
+        email: String(data.email || "").trim().toLowerCase(),
+        phone: String(data.phone || "").trim(),
+        address: String(data.address || "").trim()
       };
 
       if (editingVendor) {
@@ -137,16 +143,10 @@ export default function Vendors() {
       await fetchVendors();
       setIsModalOpen(false);
       setEditingVendor(null);
-    } catch (err: any) {
-      console.error('Error details:', err.response?.data);
-      // Handle specific error cases from backend
-      if (err.response?.status === 400) {
-        setError(err.response.data.error || "Invalid data provided. Please check your input.");
-      } else if (err.response?.status === 404) {
-        setError("Vendor not found");
-      } else {
-        setError(err.response?.data?.error || "Failed to save vendor");
-      }
+    } catch (err) {
+      console.error('Error details:', err);
+      const apiError = err as ApiError;
+      setError(apiError.error || "Failed to save vendor");
     } finally {
       setIsSubmitting(false);
     }
@@ -164,12 +164,9 @@ export default function Vendors() {
       await api.delete(`/api/vendors/${deleteVendor.id}`);
       setSuccess("Vendor deleted successfully");
       await fetchVendors();
-    } catch (err: any) {
-      if (err.response?.status === 404) {
-        setError("Vendor not found");
-      } else {
-        setError(err.response?.data?.error || "Failed to delete vendor");
-      }
+    } catch (err) {
+      const apiError = err as ApiError;
+      setError(apiError.error || "Failed to delete vendor");
     } finally {
       setLoading(false);
       setDeleteVendor(null);
@@ -378,10 +375,25 @@ export default function Vendors() {
         }}
         onSubmit={handleSubmit}
         title={editingVendor ? "Edit Vendor" : "Add Vendor"}
-        fields={formFields}
-        initialData={editingVendor}
-        loading={isSubmitting}
-      />
+        isSubmitting={isSubmitting}
+      >
+        {formFields.map((field) => (
+          <div key={field.name} className="mb-4">
+            <label htmlFor={field.name} className="block text-sm font-medium text-gray-700">
+              {field.label}
+            </label>
+            <input
+              type={field.type}
+              name={field.name}
+              id={field.name}
+              required={field.required}
+              placeholder={field.placeholder}
+              defaultValue={String(editingVendor?.[field.name as keyof Vendor] || "")}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+            />
+          </div>
+        ))}
+      </FormModal>
 
       {/* Delete Confirmation Modal */}
       <ConfirmModal
