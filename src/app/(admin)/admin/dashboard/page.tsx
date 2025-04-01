@@ -11,12 +11,6 @@ interface DashboardStats {
   totalUsers: number;
   activeUsers: number;
   inactiveUsers: number;
-  summary?: {
-    totalUsers: number;
-    activeUsers: number;
-    inactiveUsers: number;
-    verificationRate: number;
-  };
 }
 
 interface User extends Record<string, unknown> {
@@ -47,15 +41,11 @@ interface ApiError {
 }
 
 interface DashboardResponse {
-  totalUsers: number;
-  activeUsers: number;
-  inactiveUsers: number;
-  summary: {
+  stats: {
     totalUsers: number;
     activeUsers: number;
     inactiveUsers: number;
-    verificationRate: number;
-  };
+  }
 }
 
 interface UsersResponse {
@@ -98,13 +88,39 @@ export default function AdminDashboard() {
           })
         ]);
 
-        setStats(statsRes.data);
-        setUsers(usersRes.data.users || []);
-        setPagination(usersRes.data.pagination);
+        console.log('Dashboard stats response:', statsRes.data);
+        console.log('Users response:', usersRes.data);
+
+        // Update to use the stats property from the response
+        setStats({
+          totalUsers: statsRes.data?.stats?.totalUsers || 0,
+          activeUsers: statsRes.data?.stats?.activeUsers || 0,
+          inactiveUsers: statsRes.data?.stats?.inactiveUsers || 0
+        });
+        
+        setUsers(usersRes.data?.users || []);
+        setPagination(usersRes.data?.pagination || {
+          total: 0,
+          page: 1,
+          pages: 1
+        });
       } catch (err) {
         const error = err as ApiError;
         console.error("Error fetching dashboard data:", error);
         setError(error.response?.data?.error || error.message || "Failed to fetch dashboard data");
+        
+        // Set default values on error
+        setStats({
+          totalUsers: 0,
+          activeUsers: 0,
+          inactiveUsers: 0
+        });
+        setUsers([]);
+        setPagination({
+          total: 0,
+          page: 1,
+          pages: 1
+        });
       } finally {
         setLoading(false);
       }
@@ -116,7 +132,7 @@ export default function AdminDashboard() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
       </div>
     );
   }
@@ -144,6 +160,9 @@ export default function AdminDashboard() {
             <Users className="h-4 w-4 text-gray-400" />
           </div>
           <div className="text-2xl font-bold">{stats?.totalUsers || 0}</div>
+          <div className="text-sm text-gray-500 mt-2">
+            Total registered users in the system
+          </div>
         </div>
 
         <div className="bg-white rounded-lg shadow p-6">
@@ -152,6 +171,9 @@ export default function AdminDashboard() {
             <UserCheck className="h-4 w-4 text-green-400" />
           </div>
           <div className="text-2xl font-bold">{stats?.activeUsers || 0}</div>
+          <div className="text-sm text-gray-500 mt-2">
+            Users with active accounts
+          </div>
         </div>
 
         <div className="bg-white rounded-lg shadow p-6">
@@ -160,6 +182,9 @@ export default function AdminDashboard() {
             <UserX className="h-4 w-4 text-red-400" />
           </div>
           <div className="text-2xl font-bold">{stats?.inactiveUsers || 0}</div>
+          <div className="text-sm text-gray-500 mt-2">
+            Users with inactive or suspended accounts
+          </div>
         </div>
       </div>
 
@@ -175,9 +200,35 @@ export default function AdminDashboard() {
               { key: "lastName", label: "Last Name" },
               { key: "email", label: "Email" },
               { key: "phone", label: "Phone" },
-              { key: "status", label: "Status" },
-              { key: "isVerified", label: "Verified" },
-              { key: "createdAt", label: "Created At" }
+              { 
+                key: "status", 
+                label: "Status",
+                render: (value) => (
+                  <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                    value === 'active' ? 'bg-green-100 text-green-800' : 
+                    value === 'inactive' ? 'bg-red-100 text-red-800' : 
+                    'bg-gray-100 text-gray-800'
+                  }`}>
+                    {String(value).toUpperCase()}
+                  </span>
+                )
+              },
+              { 
+                key: "isVerified", 
+                label: "Verified",
+                render: (value) => (
+                  <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                    value ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                  }`}>
+                    {value ? 'YES' : 'NO'}
+                  </span>
+                )
+              },
+              { 
+                key: "createdAt", 
+                label: "Created At",
+                render: (value) => new Date(value as string).toLocaleDateString()
+              }
             ]}
             data={users}
             loading={loading}
