@@ -44,7 +44,8 @@ export function DataTable<T extends Record<string, unknown>>({
   if (!data || data.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500">
-        No data available
+        <p className="text-lg mb-2">No data available</p>
+        <p className="text-sm">Try adjusting your search criteria or date filter</p>
       </div>
     );
   }

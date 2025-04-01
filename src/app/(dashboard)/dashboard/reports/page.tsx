@@ -38,6 +38,7 @@ export default function Reports() {
   });
   const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [dateRange, setDateRange] = useState<string>("");
 
   const reports = [
@@ -45,9 +46,20 @@ export default function Reports() {
     { id: "made", name: "Payment Made" },
   ];
 
+  // Debounce search query to avoid too many API calls
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   const fetchReport = async (type: string, range?: string, search?: string) => {
     try {
       setLoading(true);
+      setError("");
+      
       let url = `/api/reports/${type}`;
       const params = new URLSearchParams();
       
@@ -58,25 +70,53 @@ export default function Reports() {
         url += `?${params.toString()}`;
       }
 
+      console.log('Fetching report with URL:', url);
       const response = await api.get<ReportResponse>(url);
-      setData(response.data.transactions);
-      setSummary(response.data.summary);
+      console.log('Report response:', response.data);
+      
+      if (response.data && response.data.transactions) {
+        setData(response.data.transactions || []);
+        setSummary(response.data.summary || {
+          totalAmount: 0,
+          averageAmount: 0,
+          transactionCount: 0,
+          growth: 0
+        });
+      } else {
+        console.error('Invalid API response format:', response.data);
+        setError("Invalid API response format");
+        setData([]);
+        setSummary({
+          totalAmount: 0,
+          averageAmount: 0,
+          transactionCount: 0,
+          growth: 0
+        });
+      }
     } catch (err) {
+      console.error('Error fetching report:', err);
       const apiError = err as ApiError;
       setError(apiError.error || "Failed to fetch report");
+      setData([]);
+      setSummary({
+        totalAmount: 0,
+        averageAmount: 0,
+        transactionCount: 0,
+        growth: 0
+      });
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchReport(activeReport, dateRange, searchQuery);
-  }, [activeReport, dateRange, searchQuery]);
+    fetchReport(activeReport, dateRange, debouncedSearchQuery);
+  }, [activeReport, dateRange, debouncedSearchQuery]);
 
   const handleExport = async (format: "pdf" | "xlsx") => {
     try {
       const response = await api.get(
-        `/api/reports/${activeReport}/export?format=${format}&range=${dateRange}&search=${searchQuery}`,
+        `/api/reports/${activeReport}/export?format=${format}&range=${dateRange}&search=${debouncedSearchQuery}`,
         { responseType: "blob" }
       );
 
@@ -166,25 +206,25 @@ export default function Reports() {
                 <div className="bg-green-50 p-4 rounded-lg">
                   <h3 className="text-sm font-medium text-green-800">Total Amount</h3>
                   <p className="mt-2 text-2xl font-semibold text-green-900">
-                    ${summary.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    ${(summary?.totalAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
                 <div className="bg-blue-50 p-4 rounded-lg">
                   <h3 className="text-sm font-medium text-blue-800">Transaction Count</h3>
                   <p className="mt-2 text-2xl font-semibold text-blue-900">
-                    {summary.transactionCount}
+                    {summary?.transactionCount || 0}
                   </p>
                 </div>
                 <div className="bg-purple-50 p-4 rounded-lg">
                   <h3 className="text-sm font-medium text-purple-800">Average Amount</h3>
                   <p className="mt-2 text-2xl font-semibold text-purple-900">
-                    ${summary.averageAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    ${(summary?.averageAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
                 <div className="bg-yellow-50 p-4 rounded-lg">
                   <h3 className="text-sm font-medium text-yellow-800">Growth</h3>
                   <p className="mt-2 text-2xl font-semibold text-yellow-900">
-                    {summary.growth.toFixed(2)}%
+                    {(summary?.growth || 0).toFixed(2)}%
                   </p>
                 </div>
               </div>
