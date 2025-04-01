@@ -272,7 +272,7 @@ export default function Customers() {
               required={field.required}
               placeholder={field.placeholder}
               defaultValue={String(editingCustomer?.[field.name as keyof Customer] || "")}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-600 focus:ring-blue-600 sm:text-sm"
             />
           </div>
         ))}
