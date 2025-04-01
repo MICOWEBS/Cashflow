@@ -85,9 +85,17 @@ export default function Customers() {
       const response = await api.get<{ customers: Customer[]; totalPages: number }>(
         `/api/customers/customers?page=${currentPage}`
       );
-      setCustomers(response.data.customers || []);
-      setTotalPages(response.data.totalPages || 1);
+      console.log('API Response:', response.data);
+      
+      if (Array.isArray(response.data)) {
+        setCustomers(response.data || []);
+        setTotalPages(1);
+      } else {
+        setCustomers(response.data.customers || []);
+        setTotalPages(response.data.totalPages || 1);
+      }
     } catch (err) {
+      console.error('Error fetching customers:', err);
       const apiError = err as ApiError;
       setError(apiError.error || "Failed to fetch customers");
       setCustomers([]);
@@ -116,7 +124,7 @@ export default function Customers() {
       };
 
       if (editingCustomer) {
-        await api.put(`/api/customers/customers${editingCustomer.id}`, formattedData);
+        await api.put(`/api/customers/customers/${editingCustomer.id}`, formattedData);
         setSuccess("Customer updated successfully");
       } else {
         await api.post("/api/customers/customers", formattedData);
@@ -127,6 +135,7 @@ export default function Customers() {
       setEditingCustomer(null);
       fetchCustomers();
     } catch (err) {
+      console.error('Error saving customer:', err);
       const apiError = err as ApiError;
       setError(apiError.error || "Failed to save customer");
     } finally {
@@ -142,6 +151,7 @@ export default function Customers() {
       setDeleteCustomer(null);
       fetchCustomers();
     } catch (err) {
+      console.error('Error deleting customer:', err);
       const apiError = err as ApiError;
       setError(apiError.error || "Failed to delete customer");
     }
