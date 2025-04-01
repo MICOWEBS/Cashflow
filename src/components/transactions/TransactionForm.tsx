@@ -41,10 +41,10 @@ export function TransactionForm({
     const fetchData = async () => {
       try {
         if (type === "sale") {
-          const response = await api.get("/api/customers");
+          const response = await api.get("/api/customers/customers");
           setCustomers(response.data);
         } else {
-          const response = await api.get("/api/vendors");
+          const response = await api.get("/api/vendors/vendors");
           setVendors(response.data);
         }
       } catch (error) {
