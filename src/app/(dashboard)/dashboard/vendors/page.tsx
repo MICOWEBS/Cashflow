@@ -82,7 +82,7 @@ export default function Vendors() {
   const fetchVendors = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await api.get("/api/vendors");
+      const response = await api.get("/api/vendors/vendors");
       setVendors(response.data);
     } catch (err) {
       const apiError = err as ApiError;
@@ -132,11 +132,11 @@ export default function Vendors() {
 
       if (editingVendor) {
         console.log('Updating vendor:', editingVendor.id, formattedData);
-        await api.put(`/api/vendors/${editingVendor.id}`, formattedData);
+        await api.put(`/api/vendors/vendors/${editingVendor.id}`, formattedData);
         setSuccess("Vendor updated successfully");
       } else {
         console.log('Creating new vendor:', formattedData);
-        await api.post("/api/vendors", formattedData);
+        await api.post("/api/vendors/vendors/", formattedData);
         setSuccess("Vendor created successfully");
       }
       
@@ -161,7 +161,7 @@ export default function Vendors() {
 
     try {
       setLoading(true);
-      await api.delete(`/api/vendors/${deleteVendor.id}`);
+      await api.delete(`/api/vendors/vendors/${deleteVendor.id}`);
       setSuccess("Vendor deleted successfully");
       await fetchVendors();
     } catch (err) {

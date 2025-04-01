@@ -83,7 +83,7 @@ export default function Customers() {
       setLoading(true);
       setError("");
       const response = await api.get<{ customers: Customer[]; totalPages: number }>(
-        `/api/customers?page=${currentPage}`
+        `/api/customers/customers?page=${currentPage}`
       );
       setCustomers(response.data.customers);
       setTotalPages(response.data.totalPages);
@@ -114,10 +114,10 @@ export default function Customers() {
       };
 
       if (editingCustomer) {
-        await api.put(`/api/customers/${editingCustomer.id}`, formattedData);
+        await api.put(`/api/customers/customers${editingCustomer.id}`, formattedData);
         setSuccess("Customer updated successfully");
       } else {
-        await api.post("/api/customers", formattedData);
+        await api.post("/api/customers/customers", formattedData);
         setSuccess("Customer added successfully");
       }
 
@@ -135,7 +135,7 @@ export default function Customers() {
   const handleDelete = async (customer: Customer) => {
     try {
       setError("");
-      await api.delete(`/api/customers/${customer.id}`);
+      await api.delete(`/api/customers/customers/${customer.id}`);
       setSuccess("Customer deleted successfully");
       setDeleteCustomer(null);
       fetchCustomers();
