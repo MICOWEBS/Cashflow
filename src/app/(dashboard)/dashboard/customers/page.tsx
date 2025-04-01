@@ -85,11 +85,13 @@ export default function Customers() {
       const response = await api.get<{ customers: Customer[]; totalPages: number }>(
         `/api/customers/customers?page=${currentPage}`
       );
-      setCustomers(response.data.customers);
-      setTotalPages(response.data.totalPages);
+      setCustomers(response.data.customers || []);
+      setTotalPages(response.data.totalPages || 1);
     } catch (err) {
       const apiError = err as ApiError;
       setError(apiError.error || "Failed to fetch customers");
+      setCustomers([]);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
@@ -181,7 +183,7 @@ export default function Customers() {
       <div className="bg-white rounded-lg shadow">
         <DataTable
           columns={columns}
-          data={customers}
+          data={customers || []}
           loading={loading}
           onEdit={(customer) => {
             setEditingCustomer(customer);
@@ -191,7 +193,7 @@ export default function Customers() {
         />
 
         {/* Pagination */}
-        {!loading && customers.length > 0 && (
+        {!loading && (customers || []).length > 0 && (
           <div className="px-4 py-3 border-t border-gray-200 sm:px-6">
             <div className="flex items-center justify-between">
               <div className="flex-1 flex justify-between sm:hidden">
