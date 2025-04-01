@@ -1,12 +1,14 @@
 {
-  "name": "cashflow-frontend",
+  "name": "cashflow",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "deploy": "chmod +x deploy.sh && ./deploy.sh",
+    "deploy:prod": "NODE_ENV=production npm run build && npm run start"
   },
   "dependencies": {
     "@radix-ui/react-icons": "^1.3.2",
